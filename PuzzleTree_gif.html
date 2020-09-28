@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+	<head>
+		<title></title>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="Sidebar Transitions: Transition effects for off-canvas views" />
+		<meta name="keywords" content="transition, off-canvas, navigation, effect, 3d, css3, smooth" />
+		<meta name="author" content="Codrops" />
+		<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+		
+	</head>
+	<body id="body">
+		<script>
+			    let old_index = 0, static_old_index, dragItem;
+    let currentX, currentY, initialX, initialY;
+    let ulArray = [], boundArray = [], positions = [];
+    let active = false, mousedown = true;
+
+    let imageURL = 'https://drive.google.com/uc?export=download&id=1ofXFZO58DwhusRRl6a4IEdxym1WC77Zz';
+    //let imageURL = 'https://drive.google.com/uc?export=download&id=145ZxtoBkTF0wgXgZVB5_Ee1xmqjX1sMI';
+  
+    window.addEventListener("touchstart", dragStart, false);
+    window.addEventListener("touchend", dragEnd, false);
+    window.addEventListener("touchmove", drag, false);
+
+    window.addEventListener("mousedown", dragStart, false);
+    window.addEventListener("mouseup", dragEnd, false);
+    window.addEventListener("mousemove", drag, false);
+
+    let body = document.getElementById("body");
+    let div = document.createElement('div');
+    div.style.width = window.innerWidth;
+
+    populate();
+    function populate(){
+      let ul1 = document.createElement('ul');
+      ul1.style.width = "500px";
+      ul1.style.height = "500px";
+      ul1.style.position = "absolute";
+      ul1.style.backgroundColor = "lightgreen";
+      ul1.style.margin = "10px";
+      ul1.style.left = (window.innerWidth-500)/2+"px";
+      ul1.style.boxShadow = "5px 10px 18px #000";
+      ul1.id = "ul1";
+
+    for(let i=0;i<5;i++){
+      for(let j=0;j<5;j++){
+        let li = document.createElement('li');
+        li.setAttribute('draggable', "false");
+        li.style.position = "absolute";
+        li.style.width = 100+"px";
+        li.style.height = 100+"px";
+        //li.src = 'https://drive.google.com/uc?export=download&id=1thITI3hahD-wyLr_gACM4wB7wo4RjyX7';
+        li.style.background = "url("+imageURL+") "+(400*i)+"px "+(400*j)+"px";
+
+        li.style.transform = "translate3d(" + (100*i) + "px, " + (100*j) + "px, 0)";
+        positions.push([100*i, 100*j]);
+        li.style.zIndex = 0;
+        li.id = "l"+((5*i)+j);
+        li.className = "liel";
+        li.style.userDrag = "none";
+        li.style.userSelect = "none";
+
+        ulArray.push("l"+((5*i)+j));
+        ul1.appendChild(li);
+      }
+    }
+
+      div.appendChild(ul1);
+      body.appendChild(div);
+      
+      for(let i=0;i<ulArray.length;i++){
+        boundArray.push(document.getElementById(ulArray[i]).getBoundingClientRect());
+      }
+    }
+
+    function dragStart(e) {
+      if(mousedown){
+        if(!active){
+          if(e.target.nodeName == "LI"){
+            dragItem = document.getElementById(e.target.id);
+            dragItem.style.zIndex = 10;
+            dragItem.style.boxShadow = "5px 10px 18px #000";
+            for(let i=0;i<ulArray.length;i++){
+              if(check(boundArray[i], e.clientX, e.clientY)){
+                old_index = i;
+                static_old_index = i;
+              }
+            }
+            for(let i=0;i<ulArray.length;i++){
+              if(ulArray[i]!=e.target.id){
+                document.getElementById(ulArray[i]).style.zIndex = 0;
+                document.getElementById(ulArray[i]).style.boxShadow = "0px 0px 0px #000";
+              }
+            }
+            if (e.type === "touchstart") {
+              initialX = e.touches[0].clientX;
+              initialY = e.touches[0].clientY;
+            } else {
+              initialX = e.clientX;
+              initialY = e.clientY;
+            }
+            if (e.target === dragItem) {
+              active = true;
+            }
+          }
+        }
+      }
+      mousedown = false;
+    }//end dragStart
+
+    function dragEnd(e) {
+       active = false;
+      mousedown = true;
+     for(let i=0;i<ulArray.length;i++){
+        setTranslate(positions[i][0], positions[i][1], document.getElementById(ulArray[i]), true);
+        document.getElementById(ulArray[i]).style.zIndex = 0;
+        document.getElementById(ulArray[i]).style.boxShadow = "0px 0px 0px #000";
+      }
+      for(let i=0;i<ulArray.length;i++){
+        if(check(boundArray[i], e.clientX, e.clientY)){
+          old_index = i;
+          static_old_index = i;
+        }
+      }
+    }//end dragEnd
+
+    function drag(e) {
+
+      if (active) {
+        e.preventDefault();
+        if (e.type === "touchmove") {
+          currentX = (e.touches[0].clientX - initialX) + positions[static_old_index][0];
+          currentY = (e.touches[0].clientY - initialY) + positions[static_old_index][1];
+        } else {
+          currentX = (e.clientX - initialX) + positions[static_old_index][0];
+          currentY = (e.clientY - initialY) + positions[static_old_index][1];
+        }
+        refit(e);
+      }
+    }//end drag
+
+    function refit(e){
+      for(let i=0;i<ulArray.length;i++){
+        if(check(boundArray[i], e.clientX, e.clientY)){
+          if(i != old_index){
+
+            ulArray = swap(ulArray, i, old_index);
+            old_index=i;
+          }
+        }
+      }
+        for(let i=0;i<ulArray.length;i++){
+          if(i == old_index){
+            setTranslate(
+              currentX,
+              currentY,
+              document.getElementById(ulArray[i]),
+              false
+              );
+          }else{
+            setTranslate(
+              positions[i][0],
+              positions[i][1],
+              document.getElementById(ulArray[i]),
+              true
+            );
+          }
+        }
+    }//end refit
+
+
+    function setTranslate(xPos, yPos, el, bull) {
+      if(bull){
+        el.style.transitionDuration = "0.25s";
+      }else{
+        el.style.transitionDuration = "0s";
+      }
+      el.style.transform = "translate3d(" + xPos + "px, " + yPos + "px, 0)";
+    }//end setTranslate
+
+
+    function check(bb, x, y){
+        this.x = bb.x;
+        this.width = bb.width;
+        this.y = bb.y;
+        this.height = bb.height;
+        return  this.x <= x && x <= this.x + this.width &&
+                this.y <= y && y <= this.y + this.height;
+    }//end check
+
+    function swap(array, s1, s2){
+      var b = array[s1];
+      array[s1] = array[s2];
+      array[s2] = b;
+      return array;
+    }//end swap
+			
+		</script>
+	</body>
+	
+
+			
+</html>
